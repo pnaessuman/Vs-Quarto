@@ -1,11 +1,79 @@
 ---
-title: "Vs_lite_Exp"
+title: "Vs-lite"
+author: "Peter, James, Zanna"
+format: html
+editor: visual
+execute: 
+  echo: false
 ---
 
-## Quarto
-
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+## Prepare Data
 
 ```{r}
-1 + 1
+#| echo: true
+#| results: false
+#| message: false
+#| warning: false
+source("External/Vs.R")
+pkgbuild::find_rtools()
+library(VSLiteR)
+library(dplR) # for reading in dendro data
+library(ggplot2) # for plotting later
+library(tidyverse)
+library(DEoptim)
 ```
+
+## Prepare Input Data
+
+```{r}
+#| echo: true
+#| results: false
+#| message: false
+#| warning: false
+
+beech <- read.rwl("Data/buche_chrono.rwl")
+climate <- read.csv2("Data/climate_bausenberg.csv")[, c(1, 2, 3, 6)]
+```
+
+## **Call to verify tree data load**
+
+```{r}
+head(beech, 3)
+```
+
+## **Call to verify climate data load**
+
+```{r}
+head(climate, 3)
+```
+
+## **Calibration run and Run model Forward**
+
+```{r}
+#| echo: true
+#| results: false
+#| message: false
+#| warning: false
+
+input_historic <- make_vsinput_historic(beech, climate)
+
+beech_params <- vs_params(input_historic$trw,
+                          input_historic$tmean,
+                          input_historic$prec,
+                          input_historic$syear,
+                          input_historic$eyear,
+                          .phi = 50) # approx. latitude in degrees
+
+input_transient <- make_vsinput_transient(climate)
+
+beech_forward <- vs_run_forward(beech_params,
+                                input_transient$tmean,
+                                input_transient$prec,
+                                input_transient$syear,
+                                input_transient$eyear,
+                                .phi = 50)
+```
+
+## **Compare the model and observation**
+
+
