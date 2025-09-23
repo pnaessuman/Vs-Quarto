@@ -76,4 +76,4 @@ beech_forward <- vs_run_forward(beech_params,
 
 ## **Compare the model and observation**
 
-
+1,2,3
