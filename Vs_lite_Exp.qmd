@@ -51,9 +51,10 @@ head(climate, 3)
 
 ```{r}
 #| echo: true
-#| results: false
 #| message: false
 #| warning: false
+#| cache: true
+#| results: false
 
 input_historic <- make_vsinput_historic(beech, climate)
 
