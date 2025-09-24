@@ -92,8 +92,8 @@ ggplot(beech_combined, aes(year, rwi)) +
   geom_line(aes(colour = variant))
 ```
 
+## **Correlation of sensitive parameter**
 
-# **Correlation of sensitive parameter**
 ```{r}
 Tp <- c(T1 = 0, T2 = 9, M1 = 0.01, M2 = 0.1)
 
@@ -117,5 +117,3 @@ cor (beech_combined$rwi [beech_combined$variant == "modelled"],
      beech_combined$rwi [beech_combined$variant == "observed"])
 
 ```
-
-
