@@ -76,4 +76,18 @@ beech_forward <- vs_run_forward(beech_params,
 
 ## **Compare the model and observation**
 
-1,2,3,4,5,6
+```{r}
+beech_observed <- data.frame(
+  year = as.numeric(rownames(beech)),
+  observed = scale(beech$bee)
+)
+
+beech_combined <- merge(beech_observed, beech_forward)
+beech_combined$modelled <- scale(beech_combined$trw)
+beech_combined$trw <- NULL
+beech_combined <- tidyr::pivot_longer(beech_combined, -1, names_to = "variant",
+                                      values_to = "rwi")
+
+ggplot(beech_combined, aes(year, rwi)) +
+  geom_line(aes(colour = variant))
+```
