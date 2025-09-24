@@ -15,7 +15,6 @@ execute:
 #| message: false
 #| warning: false
 source("External/Vs.R")
-pkgbuild::find_rtools()
 library(VSLiteR)
 library(dplR) # for reading in dendro data
 library(ggplot2) # for plotting later
