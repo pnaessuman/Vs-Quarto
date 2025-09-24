@@ -171,3 +171,47 @@ cor (Tc$rwi [Tc$variant == "modelled"],
 
 cor (beech_combined$rwi [beech_combined$variant == "modelled"], 
      beech_combined$rwi [beech_combined$variant == "observed"])
+
+#####################################################################
+# Data for spruce
+
+spruce <- read.rwl("spruce_alpine.rwl")
+climate_alpine <- read.csv2("climate_alpine.csv")[, c(1, 2, 3, 6)]
+
+
+#Calibration Run
+input_historic_s <- make_vsinput_historic(spruce, climate_alpine)
+
+spruce_params <- vs_params(input_historic_s$trw,
+                          input_historic_s$tmean,
+                          input_historic_s$prec,
+                          input_historic_s$syear,
+                          input_historic_s$eyear,
+                          .phi = 50) # approx. latitude in degrees
+
+#Run model forward
+input_transient_s <- make_vsinput_transient(climate_alpine)
+
+spruce_forward <- vs_run_forward(spruce_params,
+                                input_transient_s$tmean,
+                                input_transient_s$prec,
+                                input_transient_s$syear,
+                                input_transient_s$eyear,
+                                .phi = 50)
+
+#Compare the model and observation
+spruce_observed <- data.frame(
+  year = as.numeric(rownames(spruce)),
+  observed = scale(spruce$bee)
+)
+
+spruce_combined <- merge(spruce_observed, spruce_forward)
+spruce_combined$modelled <- scale(spruce_combined$trw)
+spruce_combined$trw <- NULL
+spruce_combined <- tidyr::pivot_longer(spruce_combined, -1, names_to = "variant",
+                                      values_to = "rwi")
+
+ggplot(spruce_combined, aes(year, rwi)) +
+  geom_line(aes(colour = variant))
+
+
