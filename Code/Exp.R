@@ -176,14 +176,14 @@ cor (beech_combined$rwi [beech_combined$variant == "modelled"],
 # Data for spruce
 
 spruce <- read.rwl("spruce_alpine.rwl")
-climate_alpine <- read.csv2("climate_alpine.csv")[, c(1, 2, 3, 6)]
+climate_alpine <- read.csv2("climate_alpine.csv")
 
 
 #Calibration Run
 input_historic_s <- make_vsinput_historic(spruce, climate_alpine)
 
 spruce_params <- vs_params(input_historic_s$trw,
-                          input_historic_s$tmean,
+                          input_historic_s$temp,
                           input_historic_s$prec,
                           input_historic_s$syear,
                           input_historic_s$eyear,
@@ -193,7 +193,7 @@ spruce_params <- vs_params(input_historic_s$trw,
 input_transient_s <- make_vsinput_transient(climate_alpine)
 
 spruce_forward <- vs_run_forward(spruce_params,
-                                input_transient_s$tmean,
+                                input_transient_s$temp,
                                 input_transient_s$prec,
                                 input_transient_s$syear,
                                 input_transient_s$eyear,
@@ -202,7 +202,7 @@ spruce_forward <- vs_run_forward(spruce_params,
 #Compare the model and observation
 spruce_observed <- data.frame(
   year = as.numeric(rownames(spruce)),
-  observed = scale(spruce$bee)
+  observed = scale(spruce$std)
 )
 
 spruce_combined <- merge(spruce_observed, spruce_forward)
@@ -214,4 +214,29 @@ spruce_combined <- tidyr::pivot_longer(spruce_combined, -1, names_to = "variant"
 ggplot(spruce_combined, aes(year, rwi)) +
   geom_line(aes(colour = variant))
 
+cor (spruce_combined$rwi [spruce_combined$variant == "modelled"], 
+     spruce_combined$rwi [spruce_combined$variant == "observed"])
 
+
+#sensitivity analysis section
+
+sp <- c(T1 = 6.5, T2 = 11.9, M1 = 0.01, M2 = 0.1)
+
+sf <- vs_run_forward(sp,
+                     input_transient_s$temp,
+                     input_transient_s$prec,
+                     input_transient_s$syear,
+                     input_transient_s$eyear,
+                     .phi = 50)
+
+sc <- merge(spruce_observed, sf)
+sc$modelled <- scale(sc$trw)
+sc$trw <- NULL
+sc <- tidyr::pivot_longer(sc, -1, names_to = "variant",
+                          values_to = "rwi")
+
+ggplot(sc, aes(year, rwi)) +
+  geom_line(aes(colour = variant))
+
+cor (sc$rwi [sc$variant == "modelled"], 
+     sc$rwi [sc$variant == "observed"])
