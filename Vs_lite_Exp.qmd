@@ -90,30 +90,33 @@ beech_combined <- tidyr::pivot_longer(beech_combined, -1, names_to = "variant",
 
 ggplot(beech_combined, aes(year, rwi)) +
   geom_line(aes(colour = variant))
+
+cor (beech_combined$rwi [beech_combined$variant == "modelled"], 
+     beech_combined$rwi [beech_combined$variant == "observed"])
 ```
 
 ## **Correlation of sensitive parameter**
 
 ```{r}
-Tp <- c(T1 = 0, T2 = 9, M1 = 0.01, M2 = 0.1)
+M2_params <- c(T1 = 0, T2 = 9, M1 = 0.01, M2 = 0.1)
 
-Tf <- vs_run_forward(Tp,
+M2_forward <- vs_run_forward(M2_params,
                       input_transient$tmean,
                       input_transient$prec,
                       input_transient$syear,
                       input_transient$eyear,
                       .phi = 50,)
 
-Tc <- merge(beech_observed, Tf)
-Tc$modelled <- scale(Tc$trw)
-Tc$trw <- NULL
-Tc <- tidyr::pivot_longer(Tc, -1, names_to = "variant",
+M2_combined <- merge(beech_observed, M2_forward)
+M2_combined$modelled <- scale(M2_combined$trw)
+M2_combined$trw <- NULL
+M2_combined <- tidyr::pivot_longer(M2_combined, -1, names_to = "variant",
                            values_to = "rwi")
 
-ggplot(bc3, aes(year, rwi)) +
+ggplot(M2_combined, aes(year, rwi)) +
   geom_line(aes(colour = variant))
 
-cor (beech_combined$rwi [beech_combined$variant == "modelled"], 
-     beech_combined$rwi [beech_combined$variant == "observed"])
+cor (M2_combined$rwi [M2_combined$variant == "modelled"], 
+     M2_combined$rwi [M2_combined$variant == "observed"])
 
 ```
