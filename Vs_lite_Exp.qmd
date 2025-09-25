@@ -122,3 +122,83 @@ cor (M2_combined$rwi [M2_combined$variant == "modelled"],
      M2_combined$rwi [M2_combined$variant == "observed"])
 
 ```
+# Spruce Data
+
+```{r}
+spruce <- read.rwl("Data/spruce_alpine.rwl")
+climate_alpine <- read.csv2("Data/climate_alpine.csv")
+```
+
+# Calibration Run 
+```{r}
+input_historic_s <- make_vsinput_historic(spruce, climate_alpine)
+
+spruce_params <- vs_params(input_historic_s$trw,
+                          input_historic_s$temp,
+                          input_historic_s$prec,
+                          input_historic_s$syear,
+                          input_historic_s$eyear,
+                          .phi = 50) # approx. latitude in degrees
+```
+
+
+#Run model Forward
+```{r}
+input_transient_s <- make_vsinput_transient(climate_alpine)
+
+spruce_forward <- vs_run_forward(spruce_params,
+                                input_transient_s$temp,
+                                input_transient_s$prec,
+                                input_transient_s$syear,
+                                input_transient_s$eyear,
+                                .phi = 50)
+```
+
+
+# Compare model and observation
+```{r}
+spruce_observed <- data.frame(
+  year = as.numeric(rownames(spruce)),
+  observed = scale(spruce$std)
+)
+
+spruce_combined <- merge(spruce_observed, spruce_forward)
+spruce_combined$modelled <- scale(spruce_combined$trw)
+spruce_combined$trw <- NULL
+spruce_combined <- tidyr::pivot_longer(spruce_combined, -1, names_to = "variant",
+                                      values_to = "rwi")
+
+ggplot(spruce_combined, aes(year, rwi)) +
+  geom_line(aes(colour = variant))
+
+cor (spruce_combined$rwi [spruce_combined$variant == "modelled"], 
+     spruce_combined$rwi [spruce_combined$variant == "observed"])
+
+```
+
+
+# Correlation of sensitive parameters 
+```{r}
+T2_params <- c(T1 = 6.5, T2 = 20, M1 = 0.01, M2 = 0.5)
+
+T2_forward <- vs_run_forward(T2_params,
+                     input_transient_s$temp,
+                     input_transient_s$prec,
+                     input_transient_s$syear,
+                     input_transient_s$eyear,
+                     .phi = 50)
+
+T2_combined <- merge(spruce_observed, T2_forward)
+T2_combined$modelled <- scale(T2_combined$trw)
+T2_combined$trw <- NULL
+T2_combined <- tidyr::pivot_longer(T2_combined, -1, names_to = "variant",
+                          values_to = "rwi")
+
+ggplot(T2_combined, aes(year, rwi)) +
+  geom_line(aes(colour = variant))
+
+cor (T2_combined$rwi [T2_combined$variant == "modelled"], 
+     T2_combined$rwi [T2_combined$variant == "observed"])
+
+```
+

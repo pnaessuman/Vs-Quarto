@@ -131,7 +131,7 @@ cor (spruce_combined$rwi [spruce_combined$variant == "modelled"],
 
 #sensitivity analysis section
 
-sp <- c(T1 = 6.5, T2 = 11.9, M1 = 0.01, M2 = 0.1)
+sp <- c(T1 = 6.5, T2 = 20, M1 = 0.01, M2 = 0.5)
 
 sf <- vs_run_forward(sp,
                      input_transient_s$temp,
