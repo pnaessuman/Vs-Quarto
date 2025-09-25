@@ -32,6 +32,8 @@ library(DEoptim)
 
 beech <- read.rwl("Data/buche_chrono.rwl")
 climate <- read.csv2("Data/climate_bausenberg.csv")[, c(1, 2, 3, 6)]
+spruce <- read.rwl("Data/spruce_alpine.rwl")
+climate_spruce <- read.csv2("Data/climate_alpine.csv")
 ```
 
 ## **Call to verify tree data load**
