@@ -131,6 +131,12 @@ climate_alpine <- read.csv2("Data/climate_alpine.csv")
 
 # Calibration Run 
 ```{r}
+#| echo: true
+#| message: false
+#| warning: false
+#| cache: true
+#| results: false
+
 input_historic_s <- make_vsinput_historic(spruce, climate_alpine)
 
 spruce_params <- vs_params(input_historic_s$trw,
