@@ -120,7 +120,3 @@ cor (M2_combined$rwi [M2_combined$variant == "modelled"],
      M2_combined$rwi [M2_combined$variant == "observed"])
 
 ```
-
-
-
-
