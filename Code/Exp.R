@@ -12,8 +12,8 @@ library(tidyverse)
 library(DEoptim)
 
 #Prepare Input data
-beech <- read.rwl("buche_chrono.rwl")
-climate <- read.csv2("climate_bausenberg.csv")[, c(1, 2, 3, 6)]
+beech <- read.rwl("Data/buche_chrono.rwl")
+climate <- read.csv2("Data/climate_bausenberg.csv")[, c(1, 2, 3, 6)]
 beech
 climate
 
@@ -73,7 +73,7 @@ Tc$trw <- NULL
 Tc <- tidyr::pivot_longer(Tc, -1, names_to = "variant",
                            values_to = "rwi")
 
-ggplot(bc3, aes(year, rwi)) +
+ggplot(Tc, aes(year, rwi)) +
   geom_line(aes(colour = variant))
 
 cor (Tc$rwi [Tc$variant == "modelled"], 
@@ -86,8 +86,8 @@ cor (beech_combined$rwi [beech_combined$variant == "modelled"],
 #####################################################################
 # Data for spruce
 
-spruce <- read.rwl("spruce_alpine.rwl")
-climate_alpine <- read.csv2("climate_alpine.csv")
+spruce <- read.rwl("Data/spruce_alpine.rwl")
+climate_alpine <- read.csv2("Data/climate_alpine.csv")
 
 
 #Calibration Run
