@@ -1,0 +1,183 @@
+---
+title: "VSLite Sensitivity Analysis"
+format: html
+server: shiny
+toc: true
+---
+
+```{r}
+#| label: Preparing the workspace
+#| context: setup
+#| echo: false
+#| message: false
+#| warning: false
+#| results: false
+source("External/Vs.R", local = FALSE)
+library(VSLiteR)
+library(dplR) # for reading in dendro data
+library(ggplot2) # for plotting later
+library(tidyverse)
+library(DEoptim)
+library(shiny)
+```
+
+```{r}
+#| echo: false
+#| context: data
+#| results: false
+#| message: false
+#| warning: false
+
+beech <- read.rwl("Data/buche_chrono.rwl")
+climate <- read.csv2("Data/climate_bausenberg.csv")[, c(1, 2, 3, 6)]
+spruce <- read.rwl("Data/spruce_alpine.rwl")
+climate_alpine <- read.csv2("Data/climate_alpine.csv")
+```
+
+## Beech
+
+### Calibration
+
+```{r}
+#| include: false
+#| cache: true
+input_historic <- make_vsinput_historic(beech, climate)
+
+beech_params <- vs_params(input_historic$trw,
+                          input_historic$tmean,
+                          input_historic$prec,
+                          input_historic$syear,
+                          input_historic$eyear,
+                          .phi = 50) # approx. latitude in degrees
+```
+
+### Sensitivity analysis
+
+```{r}
+sliderInput("T1_beech", "T1 Beech", min = 0,
+            max = 8.5, value = beech_params[1])
+sliderInput("T2_beech", "T2 Beech", min = 9,
+            max = 20, value = beech_params[2])
+sliderInput("M1_beech", "M1 Beech", min = 0.01,
+            max = 0.03, value = beech_params[3])
+sliderInput("M2_beech", "M2 Beech", min = 0.1,
+            max = 0.5, value = beech_params[4])
+plotOutput("beech_sensitivity")
+textOutput("beech_correlation")
+```
+
+```{r}
+#| context: server
+output$beech_sensitivity <- renderPlot({
+  
+  beech_params2 <- c(
+    T1 = input$T1_beech,
+    T2 = input$T2_beech,
+    M1 = input$M1_beech,
+    M2 = input$M2_beech
+  )
+  
+  input_transient <- make_vsinput_transient(climate)
+  
+  beech_forward <- vs_run_forward(beech_params2,
+                                  input_transient$tmean,
+                                  input_transient$prec,
+                                  input_transient$syear,
+                                  input_transient$eyear,
+                                  .phi = 50)
+  
+  beech_observed <- data.frame(
+    year = as.numeric(rownames(beech)),
+    observed = scale(beech$bee)
+  )
+  
+  beech_combined <- merge(beech_observed, beech_forward)
+  beech_combined$modelled <- scale(beech_combined$trw)
+  beech_combined$trw <- NULL
+  beech_combined <- tidyr::pivot_longer(
+    beech_combined, -1, 
+    names_to = "variant",
+    values_to = "rwi")
+  
+  correlation <- cor(beech_combined$rwi [beech_combined$variant == "modelled"], 
+     beech_combined$rwi [beech_combined$variant == "observed"])
+  
+  ggplot(beech_combined, aes(year, rwi)) +
+    geom_line(aes(colour = variant)) +
+    labs(title = paste0("correlation = ", round(correlation, 2)))
+})
+```
+
+## Spruce
+
+### Calibration
+
+```{r}
+#| include: false
+#| cache: true
+spruce_input_historic <- make_vsinput_historic(spruce, climate_alpine)
+
+spruce_params <- vs_params(spruce_input_historic$trw,
+                           spruce_input_historic$temp,
+                           spruce_input_historic$prec,
+                           spruce_input_historic$syear,
+                           spruce_input_historic$eyear,
+                           .phi = 50) # approx. latitude in degrees
+```
+
+### Sensitivity analysis
+
+```{r}
+sliderInput("T1_spruce", "T1 Spruce", min = 0,
+            max = 8.5, value = spruce_params[1])
+sliderInput("T2_spruce", "T2 Spruce", min = 9,
+            max = 20, value = spruce_params[2])
+sliderInput("M1_spruce", "M1 Spruce", min = 0.01,
+            max = 0.03, value = spruce_params[3])
+sliderInput("M2_spruce", "M2 Spruce", min = 0.1,
+            max = 0.5, value = spruce_params[4])
+plotOutput("spruce_sensitivity")
+textOutput("spruce_correlation")
+```
+
+```{r}
+#| context: server
+output$spruce_sensitivity <- renderPlot({
+  
+  spruce_params2 <- c(
+    T1 = input$T1_spruce,
+    T2 = input$T2_spruce,
+    M1 = input$M1_spruce,
+    M2 = input$M2_spruce
+  )
+  
+  input_transient <- make_vsinput_transient(climate_alpine)
+  
+  spruce_forward <- vs_run_forward(spruce_params2,
+                                  input_transient$temp,
+                                  input_transient$prec,
+                                  input_transient$syear,
+                                  input_transient$eyear,
+                                  .phi = 50)
+  
+  spruce_observed <- data.frame(
+    year = as.numeric(rownames(spruce)),
+    observed = scale(spruce$std)
+  )
+  
+  spruce_combined <- merge(spruce_observed, spruce_forward)
+  spruce_combined$modelled <- scale(spruce_combined$trw)
+  spruce_combined$trw <- NULL
+  spruce_combined <- tidyr::pivot_longer(
+    spruce_combined, -1, 
+    names_to = "variant",
+    values_to = "rwi")
+  
+  correlation <- cor(spruce_combined$rwi [spruce_combined$variant == "modelled"], 
+     spruce_combined$rwi [spruce_combined$variant == "observed"])
+  
+  ggplot(spruce_combined, aes(year, rwi)) +
+    geom_line(aes(colour = variant)) +
+    labs(title = paste0("correlation = ", round(correlation, 2)))
+})
+```
