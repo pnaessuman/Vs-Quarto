@@ -3,6 +3,7 @@ title: "Vs-lite"
 author: "Peter, James, Zanna"
 format: html
 editor: visual
+toc: true
 execute: 
   echo: false
 ---
@@ -33,7 +34,7 @@ library(DEoptim)
 beech <- read.rwl("Data/buche_chrono.rwl")
 climate <- read.csv2("Data/climate_bausenberg.csv")[, c(1, 2, 3, 6)]
 spruce <- read.rwl("Data/spruce_alpine.rwl")
-climate_spruce <- read.csv2("Data/climate_alpine.csv")
+climate_alpine <- read.csv2("Data/climate_alpine.csv")
 ```
 
 ## Call to verify tree data load
@@ -47,6 +48,8 @@ head(beech, 3)
 ```{r}
 head(climate, 3)
 ```
+
+# Beech, low-land
 
 ## Calibration run and Run model Forward
 
@@ -122,6 +125,8 @@ cor (M2_combined$rwi [M2_combined$variant == "modelled"],
      M2_combined$rwi [M2_combined$variant == "observed"])
 
 ```
+
+# Spruce, high-elevation
 
 ## Calibration Run 
 
