@@ -36,19 +36,19 @@ spruce <- read.rwl("Data/spruce_alpine.rwl")
 climate_spruce <- read.csv2("Data/climate_alpine.csv")
 ```
 
-## **Call to verify tree data load**
+## Call to verify tree data load
 
 ```{r}
 head(beech, 3)
 ```
 
-## **Call to verify climate data load**
+## Call to verify climate data load
 
 ```{r}
 head(climate, 3)
 ```
 
-## **Calibration run and Run model Forward**
+## Calibration run and Run model Forward
 
 ```{r}
 #| echo: true
@@ -76,7 +76,7 @@ beech_forward <- vs_run_forward(beech_params,
                                 .phi = 50)
 ```
 
-## **Compare the model and observation**
+## Compare the model and observation
 
 ```{r}
 beech_observed <- data.frame(
@@ -97,7 +97,7 @@ cor (beech_combined$rwi [beech_combined$variant == "modelled"],
      beech_combined$rwi [beech_combined$variant == "observed"])
 ```
 
-## **Correlation of sensitive parameter**
+## Correlation of sensitive parameter
 
 ```{r}
 M2_params <- c(T1 = 0, T2 = 9, M1 = 0.01, M2 = 0.1)
