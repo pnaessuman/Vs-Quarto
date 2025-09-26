@@ -122,12 +122,6 @@ cor (M2_combined$rwi [M2_combined$variant == "modelled"],
      M2_combined$rwi [M2_combined$variant == "observed"])
 
 ```
-# Spruce Data
-
-```{r}
-spruce <- read.rwl("Data/spruce_alpine.rwl")
-climate_alpine <- read.csv2("Data/climate_alpine.csv")
-```
 
 # Calibration Run 
 ```{r}
