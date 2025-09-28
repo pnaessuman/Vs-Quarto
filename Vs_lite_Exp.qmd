@@ -128,7 +128,7 @@ cor (M2_combined$rwi [M2_combined$variant == "modelled"],
 
 # Spruce, high-elevation
 
-## Calibration Run 
+## Calibration Run
 
 ```{r}
 #| echo: true
@@ -147,7 +147,6 @@ spruce_params <- vs_params(input_historic_s$trw,
                           .phi = 50) # approx. latitude in degrees
 ```
 
-
 ## Run model Forward
 
 ```{r}
@@ -160,7 +159,6 @@ spruce_forward <- vs_run_forward(spruce_params,
                                 input_transient_s$eyear,
                                 .phi = 50)
 ```
-
 
 ## Compare model and observation
 
@@ -184,8 +182,7 @@ cor (spruce_combined$rwi [spruce_combined$variant == "modelled"],
 
 ```
 
-
-## Correlation of sensitive parameters 
+## Correlation of sensitive parameters
 
 ```{r}
 T2_params <- c(T1 = 6.5, T2 = 20, M1 = 0.01, M2 = 0.5)
@@ -210,4 +207,3 @@ cor (T2_combined$rwi [T2_combined$variant == "modelled"],
      T2_combined$rwi [T2_combined$variant == "observed"])
 
 ```
-

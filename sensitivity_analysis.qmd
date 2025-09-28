@@ -23,10 +23,10 @@ library(shiny)
 
 ```{r}
 #| echo: false
-#| context: data
-#| results: false
 #| message: false
 #| warning: false
+#| context: data
+#| results: false
 
 beech <- read.rwl("Data/buche_chrono.rwl")
 climate <- read.csv2("Data/climate_bausenberg.csv")[, c(1, 2, 3, 6)]
@@ -39,8 +39,8 @@ climate_alpine <- read.csv2("Data/climate_alpine.csv")
 ### Calibration
 
 ```{r}
-#| include: false
 #| cache: true
+#| include: false
 input_historic <- make_vsinput_historic(beech, climate)
 
 beech_params <- vs_params(input_historic$trw,
