@@ -161,6 +161,7 @@ spruce_forward <- vs_run_forward(spruce_params,
 ```
 
 ## Compare model and observation
+
 ```{r}
 
 ```

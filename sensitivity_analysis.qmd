@@ -62,7 +62,7 @@ sliderInput("M1_beech", "M1 Beech", min = 0.01,
             max = 0.03, value = beech_params[3])
 sliderInput("M2_beech", "M2 Beech", min = 0.1,
             max = 0.5, value = beech_params[4])
-plotOutput("beech_sensitivity")
+plotOutput("beech_sesitivity")
 textOutput("beech_correlation")
 ```
 
