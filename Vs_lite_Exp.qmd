@@ -35,6 +35,8 @@ beech <- read.rwl("Data/buche_chrono.rwl")
 climate <- read.csv2("Data/climate_bausenberg.csv")[, c(1, 2, 3, 6)]
 spruce <- read.rwl("Data/spruce_alpine.rwl")
 climate_alpine <- read.csv2("Data/climate_alpine.csv")
+cordex_alpine <- read_csv2("Data/lfu_cordex_ensemble_monthly_alpine.csv")
+cordex_beech <- read_csv2("Data/lfu_cordex_ensemble_monthly_beech.csv")
 ```
 
 ## Call to verify tree data load
@@ -211,3 +213,27 @@ cor (T2_combined$rwi [T2_combined$variant == "modelled"],
      T2_combined$rwi [T2_combined$variant == "observed"])
 
 ```
+
+## Forward run with future data
+
+```{r}
+
+input_transient_s_rcp_85 <- cordex_alpine %>% 
+  filter(year > 2030, rcp == "RCP_85") %>% 
+  group_by(year, month) %>% 
+  summarise(temp = mean(temp),
+            prec = mean(prec)) %>% 
+  ungroup() %>% 
+  make_vsinput_transient
+
+spruce_forward <- vs_run_forward(spruce_params,
+                                input_transient_s_rcp_85$temp,
+                                input_transient_s_rcp_85$prec,
+                                input_transient_s_rcp_85$syear,
+                                input_transient_s_rcp_85$eyear,
+                                .phi = 50)
+
+ggplot(spruce_forward, aes(year, trw)) +
+  geom_line()
+```
+
