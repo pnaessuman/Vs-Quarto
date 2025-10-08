@@ -124,6 +124,86 @@ output$beech_sensitivity <- renderPlot({
     names_to = "variant",
     values_to = "rwi")
   
+  correlation <- cor(beech_combined$rwi [beech_combined$variant == "modelled"],
+                     beech_combined$rwi [beech_combined$variant == "observed"])
+  
+  ggplot(beech_combined, aes(year, rwi)) +
+    geom_line(aes(colour = variant)) +
+    labs(title = paste0("correlation = ", round(correlation, 2))) +
+    geom_smooth(aes(colour = variant), se = FALSE)
+})
+```
+
+```{r}
+sliderInput("T1_beech", "T1 Beech", min = 0,
+            max = 8.5, value = beech_params[1])
+sliderInput("T2_beech", "T2 Beech", min = 9,
+            max = 20, value = beech_params[2])
+sliderInput("M1_beech", "M1 Beech", min = 0.01,
+            max = 0.03, value = beech_params[3])
+sliderInput("M2_beech", "M2 Beech", min = 0.1,
+            max = 0.5, value = beech_params[4])
+shiny::selectInput("gcm_beech", "climate ids",
+                   choices = c("ICHEC-EC-EARTH_r12i1p1","MIROC-MIROC5_r1i1p1", "MPI-M-MPI-ESM-LR_r1i1p1", "ICHEC-EC-EARTH_r1i1p1", "MOHC-HadGEM2-ES_r1i1p1"))
+plotOutput("beech_sensitivity")
+textOutput("beech_correlation")
+```
+
+
+```{r}
+#| context: server
+output$beech_sensitivity <- renderPlot({
+  
+  beech_params2 <- c(
+    T1 = input$T1_beech,
+    T2 = input$T2_beech,
+    M1 = input$M1_beech,
+    M2 = input$M2_beech
+  )
+  
+  input_transient <- make_vsinput_transient(climate)
+  
+  beech_forward <- vs_run_forward(beech_params2,
+                                  input_transient$tmean,
+                                  input_transient$prec,
+                                  input_transient$syear,
+                                  input_transient$eyear,
+                                  .phi = 50)
+  
+  gcm_input <- cordex_beech %>% 
+    filter(year > 2020, gcm == input$gcm_beech) %>% 
+    group_by(year, month) %>% 
+    summarise(
+      tmean = mean(temp),
+      prec = mean(prec)
+    ) %>% 
+    ungroup() %>% 
+    make_vsinput_transient()
+  
+  beech_forward_gcm <- vs_run_forward(beech_params2,
+               gcm_input$tmean,
+               gcm_input$prec,
+               gcm_input$syear,
+               gcm_input$eyear,
+               .phi = 50)
+  
+  names(beech_forward_gcm) <- c("year", "projection")
+  
+  beech_observed <- data.frame(
+    year = as.numeric(rownames(beech)),
+    observed = scale(beech$bee)
+  )
+  
+  beech_combined <- merge(beech_observed, beech_forward)
+  beech_combined$modelled <- scale(beech_combined$trw)
+  beech_combined$trw <- NULL
+  beech_combined <- merge(beech_combined, beech_forward_gcm, all = TRUE)
+  print(head(beech_combined))
+  beech_combined <- tidyr::pivot_longer(
+    beech_combined, -1, 
+    names_to = "variant",
+    values_to = "rwi")
+  
   correlation <- cor(beech_combined$rwi [beech_combined$variant == "modelled"], 
      beech_combined$rwi [beech_combined$variant == "observed"])
   
@@ -162,6 +242,8 @@ sliderInput("M1_spruce", "M1 Spruce", min = 0.01,
             max = 0.03, value = spruce_params[3])
 sliderInput("M2_spruce", "M2 Spruce", min = 0.1,
             max = 0.5, value = spruce_params[4])
+shiny::selectInput("rcp_spruce", "Szenario",
+                   choices = c("RCP_85", "RCP_45", "RCP_26"))
 shiny::selectInput("rcp_spruce", "Szenario",
                    choices = c("RCP_85", "RCP_45", "RCP_26"))
 plotOutput("spruce_sensitivity")

@@ -3,7 +3,6 @@ title: "Vs-lite"
 author: "Peter, James, Zanna"
 format: html
 editor: visual
-toc: true
 execute: 
   echo: false
 ---
@@ -34,24 +33,22 @@ library(DEoptim)
 beech <- read.rwl("Data/buche_chrono.rwl")
 climate <- read.csv2("Data/climate_bausenberg.csv")[, c(1, 2, 3, 6)]
 spruce <- read.rwl("Data/spruce_alpine.rwl")
-climate_alpine <- read.csv2("Data/climate_alpine.csv")
+climate_spruce <- read.csv2("Data/climate_alpine.csv")
 ```
 
-## Call to verify tree data load
+## **Call to verify tree data load**
 
 ```{r}
 head(beech, 3)
 ```
 
-## Call to verify climate data load
+## **Call to verify climate data load**
 
 ```{r}
 head(climate, 3)
 ```
 
-# Beech, low-land
-
-## Calibration run and Run model Forward
+## **Calibration run and Run model Forward**
 
 ```{r}
 #| echo: true
@@ -79,7 +76,7 @@ beech_forward <- vs_run_forward(beech_params,
                                 .phi = 50)
 ```
 
-## Compare the model and observation
+## **Compare the model and observation**
 
 ```{r}
 beech_observed <- data.frame(
@@ -100,7 +97,7 @@ cor (beech_combined$rwi [beech_combined$variant == "modelled"],
      beech_combined$rwi [beech_combined$variant == "observed"])
 ```
 
-## Correlation of sensitive parameter
+## **Correlation of sensitive parameter**
 
 ```{r}
 M2_params <- c(T1 = 0, T2 = 9, M1 = 0.01, M2 = 0.1)
@@ -125,11 +122,14 @@ cor (M2_combined$rwi [M2_combined$variant == "modelled"],
      M2_combined$rwi [M2_combined$variant == "observed"])
 
 ```
+# Spruce Data
 
-# Spruce, high-elevation
+```{r}
+spruce <- read.rwl("Data/spruce_alpine.rwl")
+climate_alpine <- read.csv2("Data/climate_alpine.csv")
+```
 
-## Calibration Run
-
+# Calibration Run 
 ```{r}
 #| echo: true
 #| message: false
@@ -147,8 +147,8 @@ spruce_params <- vs_params(input_historic_s$trw,
                           .phi = 50) # approx. latitude in degrees
 ```
 
-## Run model Forward
 
+#Run model Forward
 ```{r}
 input_transient_s <- make_vsinput_transient(climate_alpine)
 
@@ -160,12 +160,8 @@ spruce_forward <- vs_run_forward(spruce_params,
                                 .phi = 50)
 ```
 
-## Compare model and observation
 
-```{r}
-
-```
-
+# Compare model and observation
 ```{r}
 spruce_observed <- data.frame(
   year = as.numeric(rownames(spruce)),
@@ -186,8 +182,8 @@ cor (spruce_combined$rwi [spruce_combined$variant == "modelled"],
 
 ```
 
-## Correlation of sensitive parameters
 
+# Correlation of sensitive parameters 
 ```{r}
 T2_params <- c(T1 = 6.5, T2 = 20, M1 = 0.01, M2 = 0.5)
 
@@ -211,3 +207,4 @@ cor (T2_combined$rwi [T2_combined$variant == "modelled"],
      T2_combined$rwi [T2_combined$variant == "observed"])
 
 ```
+
