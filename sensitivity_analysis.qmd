@@ -137,7 +137,6 @@ output$beech_sensitivity_rcp <- renderPlot({
 })
 ```
 
-
 ```{r}
 #| context: server
 output$beech_sensitivity_gcm <- renderPlot({
@@ -298,5 +297,4 @@ output$spruce_sensitivity <- renderPlot({
     labs(title = paste0("correlation = ", round(correlation, 2))) +
     geom_smooth(aes(colour = variant), se = FALSE)
 })
-``` 
-
+```
