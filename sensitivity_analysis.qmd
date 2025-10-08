@@ -137,9 +137,8 @@ output$beech_sensitivity_rcp <- renderPlot({
 })
 ```
 
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
+
+
 ```{r}
 sliderInput("T1_beech", "T1 Beech", min = 0,
             max = 8.5, value = beech_params[1])
@@ -154,10 +153,8 @@ shiny::selectInput("gcm_beech", "climate ids",
 plotOutput("beech_sensitivity")
 textOutput("beech_correlation")
 ```
-=======
->>>>>>> 9a662de85608b1be09f9f07561a811a07237cb02
 
->>>>>>> refs/remotes/origin/interactive
+
 ```{r}
 #| context: server
 output$beech_sensitivity_gcm <- renderPlot({
