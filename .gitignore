@@ -6,3 +6,4 @@
 *_cache/
 *.Rhistory
 *_data/*
+.DS_Store
