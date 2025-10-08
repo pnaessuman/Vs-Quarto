@@ -230,8 +230,5 @@ output$spruce_sensitivity <- renderPlot({
     labs(title = paste0("correlation = ", round(correlation, 2))) +
     geom_smooth(aes(colour = variant), se = FALSE)
 })
-```
+``` 
 
-```{r}
-Lets see
-```
