@@ -84,7 +84,7 @@ output$beech_sensitivity <- renderPlot({
   input_transient <- make_vsinput_transient(climate)
   
   beech_forward <- vs_run_forward(beech_params2,
-                                  input_transient$tmean,
+                                  input_transient$temp,
                                   input_transient$prec,
                                   input_transient$syear,
                                   input_transient$eyear,
@@ -101,7 +101,7 @@ output$beech_sensitivity <- renderPlot({
     make_vsinput_transient()
   
   beech_forward_rcp <- vs_run_forward(beech_params2,
-                                      rcp_input$tmean,
+                                      rcp_input$temp,
                                       rcp_input$prec,
                                       rcp_input$syear,
                                       rcp_input$eyear,
