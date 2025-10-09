@@ -199,8 +199,8 @@ output$spruce_sensitivity <- renderPlot({
                                   input_transient$syear,
                                   input_transient$eyear,
                                   .phi = 50)
-  rcp_input <- cordex_beech %>% 
-    filter(year > 2020, rcp == input$rcp_beech) %>% 
+  rcp_input <- cordex_alpine %>% 
+    filter(year > 2020, rcp == input$rcp_spruce) %>% 
     group_by(year, month) %>% 
     summarise(
       tmean = mean(temp),
