@@ -64,10 +64,6 @@ sliderInput("M1_beech", "M1 Beech", min = 0.01,
             max = 0.03, value = beech_params[3])
 sliderInput("M2_beech", "M2 Beech", min = 0.1,
             max = 0.5, value = beech_params[4])
-shiny::selectInput("rcp_beech", "Szenario",
-                   choices = c("RCP_85", "RCP_45", "RCP_26"))
-shiny::selectInput("gcm_beech", "climate ids",
-                   choices = c("ICHEC-EC-EARTH_r12i1p1","MIROC-MIROC5_r1i1p1", "MPI-M-MPI-ESM-LR_r1i1p1", "ICHEC-EC-EARTH_r1i1p1", "MOHC-HadGEM2-ES_r1i1p1"))
 plotOutput("beech_sensitivity_rcp")
 ```
 
@@ -91,59 +87,48 @@ output$beech_sensitivity_rcp <- renderPlot({
                                   input_transient$eyear,
                                   .phi = 50)
   
-  rcp_input <- cordex_beech %>% 
-    filter(year > 2020,
-           rcp == input$rcp_beech,
-           gcm == input$gcm_beech) %>% 
-    group_by(year, month) %>% 
-    summarise(
-      tmean = mean(temp),
-      prec = mean(prec)
-    ) %>% 
-    ungroup() %>% 
-    make_vsinput_transient()
-  
-  if (any(dim(rcp_input$tmean) == 0)) {
-    plot(0, 0, xlim = c(0, 10), ylim = c(0, 10),
-         type = "n", xlab = "", ylab = "")
-    text(5, 5, "No data available")
-  } else {
-    beech_forward_rcp <- vs_run_forward(beech_params2,
-                                        rcp_input$tmean,
-                                        rcp_input$prec,
-                                        rcp_input$syear,
-                                        rcp_input$eyear,
-                                        .phi = 50)
-    
-    names(beech_forward_rcp) <- c("year", "projection")
-    
-    beech_observed <- data.frame(
-      year = as.numeric(rownames(beech)),
-      observed = scale(beech$bee)
-    )
-    
-    beech_combined <- merge(beech_observed, beech_forward)
-    beech_combined$modelled <- scale(beech_combined$trw)
-    beech_combined$trw <- NULL
-    beech_combined <- merge(beech_combined, beech_forward_rcp, all = TRUE)
-    # print(head(beech_combined))
-    beech_combined <- tidyr::pivot_longer(
-      beech_combined, -1, 
-      names_to = "variant",
-      values_to = "rwi")
-    
-    correlation <- cor(beech_combined$rwi [beech_combined$variant == "modelled"],
-                       beech_combined$rwi [beech_combined$variant == "observed"])
-    
-    ggplot(beech_combined, aes(year, rwi)) +
-      geom_line(aes(colour = variant)) +
-      labs(title = paste0("correlation = ", round(correlation, 2))) +
-      geom_smooth(aes(colour = variant), se = FALSE)
+  make_forward_model <- function(x) {
+    input <- make_vsinput_transient(x)
+    vs_run_forward(beech_params2,
+                   input$temp,
+                   input$prec,
+                   input$syear,
+                   input$eyear,
+                   .phi = 50)
   }
-})
   
+  forward_beech <- cordex_beech %>% 
+    filter(year > 2020) %>% 
+    group_by(rcp, gcm, rcm) %>% 
+    filter(length(year) == 80 * 12) %>% 
+    nest() %>% 
+    mutate(vs_forward = purrr::map(data, make_forward_model)) %>% 
+    unnest(vs_forward)
+  
+  smooth_trw <- function(x) {
+    trw <- predict(loess(trw ~ year, data = x))
+    data.frame(
+      year = x$year,
+      trw = trw
+    )
+  }
+  
+  forward_beech %>% 
+    group_by(rcp, gcm, rcm) %>% 
+    nest() %>% 
+    mutate(trw = map(data, smooth_trw)) %>%
+    unnest(trw) %>% 
+    group_by(rcp, year) %>% 
+    summarise(
+      trw_sd = sd(trw),
+      trw = mean(trw)
+    ) %>% 
+    ggplot(aes(year, trw)) +
+    geom_ribbon(aes(ymin = trw - trw_sd, ymax = trw + trw_sd)) +
+    geom_line(colour = "red") +
+    facet_wrap(~ rcp)
+})
 ```
-
 
 
 ## Spruce
