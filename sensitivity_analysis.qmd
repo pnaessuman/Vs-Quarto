@@ -137,7 +137,6 @@ output$beech_sensitivity_rcp <- renderPlot({
 })
 ```
 
-
 ```{r}
 #| context: server
 output$beech_sensitivity_gcm <- renderPlot({
