@@ -1,0 +1,195 @@
+---
+title: "VSLite Sensitivity Analysis"
+format: html
+server: shiny
+toc: true
+---
+
+```{r}
+#| label: Preparing the workspace
+#| context: setup
+#| echo: false
+#| message: false
+#| warning: false
+#| results: false
+source("External/Vs.R", local = FALSE)
+library(VSLiteR)
+library(dplR) # for reading in dendro data
+library(ggplot2) # for plotting later
+library(tidyverse)
+library(DEoptim)
+library(shiny)
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+#| context: data
+#| results: false
+
+beech <- read.rwl("Data/buche_chrono.rwl")
+climate <- read.csv2("Data/climate_bausenberg.csv")[, c(1, 2, 3, 6)]
+spruce <- read.rwl("Data/spruce_alpine.rwl")
+climate_alpine <- read.csv2("Data/climate_alpine.csv") |> rename(tmean = temp)
+cordex_alpine <- read.csv2("Data/lfu_cordex_ensemble_monthly_alpine.csv")
+cordex_beech <- read.csv2("Data/lfu_cordex_ensemble_monthly_beech.csv")
+```
+
+```{r}
+#| context: data
+estimate_parameters <- function(chrono, historic_climate) {
+  input_historic <- make_vsinput_historic(chrono, historic_climate)
+
+  vs_params_estimate <- vs_params(input_historic$trw,
+                                  input_historic$tmean,
+                                  input_historic$prec,
+                                  input_historic$syear,
+                                  input_historic$eyear,
+                                  .phi = 50, iter = 20)
+  vs_params_estimate
+}
+
+forward_historic <- function(vs_params_estimate, historic_climate) {
+  input_transient_historic <- make_vsinput_transient(historic_climate)
+  vs_run_forward(vs_params_estimate,
+                 input_transient_historic$tmean,
+                 input_transient_historic$prec,
+                 input_transient_historic$syear,
+                 input_transient_historic$eyear,
+                 .phi = 50)
+}
+
+forward_projection <- function(vs_params_estimate, projected_climate) {
+  
+  make_forward_model <- function(x) {
+    input <- make_vsinput_transient(x)
+    vs_run_forward(vs_params_estimate,
+                   input$temp,
+                   input$prec,
+                   input$syear,
+                   input$eyear,
+                   .phi = 50)
+  }
+  
+  projected_climate %>% 
+    filter(year > 2020) %>% 
+    group_by(rcp, gcm, rcm) %>% 
+    filter(length(year) == 80 * 12) %>% 
+    nest() %>% 
+    mutate(vs_forward = purrr::map(data, make_forward_model)) %>% 
+    unnest(vs_forward)
+}
+
+smooth_trw <- function(x) {
+    trw <- predict(loess(trw ~ year, data = x))
+    data.frame(
+      year = x$year,
+      trw = trw
+    )
+}
+
+forward_plot <- function(forward_model) {
+  forward_model %>% 
+    group_by(rcp, gcm, rcm) %>% 
+    nest() %>% 
+    mutate(trw = map(data, smooth_trw)) %>%
+    unnest(trw) %>% 
+    group_by(rcp, year) %>% 
+    summarise(
+      trw_sd = sd(trw),
+      trw = mean(trw)
+    ) %>% 
+    ggplot(aes(year, trw)) +
+    geom_ribbon(aes(ymin = trw - trw_sd, ymax = trw + trw_sd)) +
+    geom_line(colour = "red") +
+    facet_wrap(~ rcp)
+}
+```
+
+
+## Beech
+
+### Calibration
+
+```{r}
+#| cache: true
+#| include: false
+
+beech_params <- estimate_parameters(beech, climate)
+```
+
+### Sensitivity analysis
+
+```{r}
+sliderInput("T1_beech", "T1 Beech", min = 0,
+            max = 8.5, value = beech_params[1])
+sliderInput("T2_beech", "T2 Beech", min = 9,
+            max = 20, value = beech_params[2])
+sliderInput("M1_beech", "M1 Beech", min = 0.01,
+            max = 0.03, value = beech_params[3])
+sliderInput("M2_beech", "M2 Beech", min = 0.1,
+            max = 0.5, value = beech_params[4])
+plotOutput("beech_sensitivity")
+```
+
+```{r}
+#| context: server
+output$beech_sensitivity <- renderPlot({
+  
+  beech_params2 <- c(
+    T1 = input$T1_beech,
+    T2 = input$T2_beech,
+    M1 = input$M1_beech,
+    M2 = input$M2_beech
+  )
+  
+  beech_forward_historic <- forward_historic(beech_params2, climate)
+  beech_forward_projection <- forward_projection(beech_params2, cordex_beech)
+  forward_plot(beech_forward_projection)
+})
+```
+
+## Spruce
+
+### Calibration
+
+```{r}
+#| include: false
+#| cache: true
+
+spruce_params <- estimate_parameters(spruce, climate_alpine)
+```
+
+### Sensitivity analysis
+
+```{r}
+sliderInput("T1_spruce", "T1 Spruce", min = 0,
+            max = 8.5, value = spruce_params[1])
+sliderInput("T2_spruce", "T2 Spruce", min = 9,
+            max = 20, value = spruce_params[2])
+sliderInput("M1_spruce", "M1 Spruce", min = 0.01,
+            max = 0.03, value = spruce_params[3])
+sliderInput("M2_spruce", "M2 Spruce", min = 0.1,
+            max = 0.5, value = spruce_params[4])
+shiny::selectInput("rcp_spruce", "Szenario",
+                   choices = c("RCP_85", "RCP_45", "RCP_26"))
+plotOutput("spruce_sensitivity")
+```
+
+```{r}
+#| context: server
+output$spruce_sensitivity <- renderPlot({
+  
+  spruce_params2 <- c(
+    T1 = input$T1_spruce,
+    T2 = input$T2_spruce,
+    M1 = input$M1_spruce,
+    M2 = input$M2_spruce
+  )
+  
+  spruce_forward_historic <- forward_historic(spruce_params2, climate)
+  spruce_forward_projection <- forward_projection(spruce_params2, cordex_alpine)
+  forward_plot(spruce_forward_projection)
+})
+```
