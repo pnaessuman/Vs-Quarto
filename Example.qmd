@@ -1,0 +1,111 @@
+---
+title: "Sailershausen B1-B2 Species Sensitivity Analysis"
+format: html
+server: shiny
+toc: true
+---
+
+```{r}
+#| label: Setup
+#| context: setup
+#| echo: false
+#| message: false
+#| warning: false
+source("External/Vs.R")
+source("External/custom_functions.R")  #Load your new functions
+
+library(VSLiteR)
+library(dplR)
+library(ggplot2)
+library(tidyverse)
+library(shiny)
+library(bslib)
+library(DT)
+```
+
+```{r}
+#| echo: false
+#| context: data
+#| message: false
+#| warning: false
+
+# Load tree ring data
+tree_data <- list(
+  b1ac = read.rwl("Data/b1ac.rwl"),
+  b1apl = read.rwl("Data/b1apl.rwl"),
+  b1aps = read.rwl("Data/b1aps.rwl"),
+  b1fs = read.rwl("Data/b1fs.rwl"),
+  b1pa = read.rwl("Data/b1pa.rwl"),
+  b1qp = read.rwl("Data/b1qp.rwl"),
+  b2ac = read.rwl("Data/b2ac.rwl"),
+  b2pa = read.rwl("Data/b2pa.rwl"),
+  b2qp = read.rwl("Data/b2qp.rwl")
+)
+
+# Load climate data
+climate_b1 <- read_csv2("Data/B1_Sailerhausen.csv")
+climate_b2 <- read_csv2("Data/B2_Sailerhausen.csv")
+cordex_b1 <- read_csv2("Data/cordex_b1_padded.csv")
+cordex_b2 <- read_csv2("Data/cordex_b2_padded.csv")
+
+# Detrend all datasets
+tree_detrended <- lapply(tree_data, detrend, method = "Spline", nyrs = 32)
+
+# Create chronologies
+tree_chron <- lapply(tree_detrended, chron)
+
+# Estimate parameters for all species
+params <- list(
+  b1ac = estimate_parameters(tree_chron$b1ac, climate_b1),
+  b1apl = estimate_parameters(tree_chron$b1apl, climate_b1),
+  b1aps = estimate_parameters(tree_chron$b1aps, climate_b1),
+  b1fs = estimate_parameters(tree_chron$b1fs, climate_b1),
+  b1pa = estimate_parameters(tree_chron$b1pa, climate_b1),
+  b1qp = estimate_parameters(tree_chron$b1qp, climate_b1),
+  b2ac = estimate_parameters(tree_chron$b2ac, climate_b2),
+  b2pa = estimate_parameters(tree_chron$b2pa, climate_b2),
+  b2qp = estimate_parameters(tree_chron$b2qp, climate_b2)
+)
+```
+
+## B1ac - Acer campestre
+
+```{r}
+sliderInput("T1_b1ac", "T1", min = 0, max = 8.5, value = params$b1ac[1])
+sliderInput("T2_b1ac", "T2", min = 9, max = 20, value = params$b1ac[2])
+sliderInput("M1_b1ac", "M1", min = 0.01, max = 0.03, value = params$b1ac[3])
+sliderInput("M2_b1ac", "M2", min = 0.1, max = 0.5, value = params$b1ac[4])
+selectInput("rcp_b1ac", "Scenario", choices = c("RCP_85", "RCP_45", "RCP_26"))
+selectInput("rcm_b1ac", "Regional Climate Model", 
+            choices = c("CLMcom-CCLM4-8-17", "KNMI-RACMO22E", "SMHI-RCA4", 
+                       "CEC-WETTREG2018", "UHOH-WRF361H"))
+
+plotOutput("b1ac_rcp_plot")
+plotOutput("b1ac_rcm_plot")
+```
+
+```{r}
+#| context: server
+
+# Generic function to render plots for any species
+render_species_plot <- function(species_id, chrono, climate_hist, climate_proj, 
+                               filter_var, input_param_prefix, input_filter) {
+  renderPlot({
+    # Get adjusted parameters from sliders
+    params_adj <- c(
+      T1 = input[[paste0("T1_", species_id)]],
+      T2 = input[[paste0("T2_", species_id)]],
+      M1 = input[[paste0("M1_", species_id)]],
+      M2 = input[[paste0("M2_", species_id)]]
+    )
+    
+    # Run forward models
+    hist_forward <- forward_historic(params_adj, climate_hist)
+    proj_forward <- run_projection(params_adj, climate_proj, 
+                                   filter_var, input[[input_filter]])
+    
+    # Create combined data and plot
+    combined <- create_combined_data(chrono, hist_forward, proj_forward)
+    plot_sensitivity(combined)
+  })
+}
